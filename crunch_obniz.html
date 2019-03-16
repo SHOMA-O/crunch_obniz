@@ -1,0 +1,83 @@
+<html ng-app = 'App'>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/angularjs-onsenui@1.0.1/dist/angularjs-onsenui.min.js"></script>
+    <script src="https://unpkg.com/obniz@2.0.1/obniz.js" crossorigin="anonymous"></script>
+  </head>
+  <body ng-controller="AppController">
+    <ons-page>
+      <ons-toolbar>
+        <div class="center">Range sliders</div>
+      </ons-toolbar>
+      <p>
+        <ons-row>
+          <ons-col>
+            <ons-range style="width: 100%;" ng-model="myrange" min="90" max="180" ng-change="change(myrange)"></ons-range>
+          </ons-col>
+        </ons-row>
+      </p>
+      <p>motor_param_rangebar :<b>{{nume}}</b></p>
+      <p>motor_param_sensor :<b>{{myrange}}</b></p>
+
+      <script>
+
+        var app = angular.module('App', ['onsen']);
+        var obniz = new Obniz("OBNIZ_ID_HERE");
+        var servo;
+        /* Obniz接続時*/
+        obniz.onconnect = async function () {
+          /* obnizのパーツライブラリを利用*/
+          servo = obniz.wired("ServoMotor", {signal:0,vcc:1, gnd:2});
+          console.log("Obniz is seted");
+          /* 調整*/
+          servo.range = {
+            min: 0.8,
+            max: 1.8
+          }
+          /* 初期値*/
+          servo.angle(90);
+        };
+        /* AngularJS*/
+
+        app.controller('AppController',['$scope','$window',function($scope,$window){
+          $scope.myrange=90;
+          $scope.change = function(myrange){
+            var x = Setservo(myrange);
+            console.log("myrange: "+x);
+          };
+          $window.addEventListener("deviceorientation", function (event1) {
+            var x = 2.5*event1.beta;
+            x = Setservo(x);
+            /* 適用　強制的にバインディングする*/
+            $scope.$apply(function () {
+              $scope.nume = x;
+            });
+          }, true);
+          /* サーボモータ設定関数*/
+          function Setservo(angle){
+            var x = angle;
+            /* ９０-180度*/
+            if(x<=90)
+            {
+              x=90;
+            }
+            else if(x>=180){
+              x=180;
+            }
+            x = Math.floor(x);/* 少数点なしにする*/
+            /* Obniz設定*/
+            if(servo!=null){
+              servo.angle(x);
+            }
+            return x;
+          }
+        }]);
+      </script>
+    </ons-page>
+  </body>
+</html>  
